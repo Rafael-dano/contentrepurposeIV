@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 .env
-ivtool/tailwindcss-macos-arm64
+ivtool/tailwindcss-macos-arm64ivtool/tailwindcss-macos-arm64
+tailwindcss-macos-arm64
