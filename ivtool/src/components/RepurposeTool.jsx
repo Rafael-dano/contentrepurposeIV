@@ -144,7 +144,7 @@ export default function RepurposeTool() {
   const Header = () => (
     <header className="w-full px-6 py-4 flex items-center justify-between bg-gray-800 text-white shadow-md">
       <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
-        <span className="text-3xl">♻️</span> Repurpose<span className="text-cyan-400">IV</span>
+        <span className="text-3xl">♻️</span> IV <span className="text-cyan-400">Content</span>
       </h1>
       
       <section>

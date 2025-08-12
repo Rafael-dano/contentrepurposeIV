@@ -11,7 +11,7 @@ function Header() {
     <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-4xl mx-auto flex justify-between items-center px-6 py-4">
         <Link to="/" className="text-xl font-bold text-white hover:text-indigo-400 transition">
-          RepurposeIV
+         IV Content
         </Link>
         <nav className="space-x-4">
           <Link
