@@ -5,7 +5,7 @@ import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import EmailCapture from "./pages/EmailCapture";
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/Landingpage";
 import RequireAuth from "./components/RequireAuth";
 import Footer from "./components/Footer";
 
