@@ -4,6 +4,9 @@ import RepurposeTool from "./components/RepurposeTool";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
+import EmailCapture from "./pages/EmailCapture";
+import LandingPage from "./pages/LandingPage";
+import RequireAuth from "./components/RequireAuth";
 import Footer from "./components/Footer";
 
 function Header() {
@@ -11,7 +14,7 @@ function Header() {
     <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-4xl mx-auto flex justify-between items-center px-6 py-4">
         <Link to="/" className="text-xl font-bold text-white hover:text-indigo-400 transition">
-         IV Content
+         IVContent
         </Link>
         <nav className="space-x-4">
           <Link
@@ -25,6 +28,12 @@ function Header() {
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white transition"
           >
             Login
+          </Link>
+          <Link
+            to="/waitlist"
+            className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-white transition"
+          >
+            Join Waitlist
           </Link>
           <Link
             to="/settings"
@@ -48,7 +57,11 @@ export default function App() {
             <Route path="/" element={<RepurposeTool />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/waitlist" element={<EmailCapture />} />
+            <Route path="/lander1" element={<LandingPage />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/settings" element={<Settings />} />
+            </Route>
           </Routes>
         </div>
         <Footer />

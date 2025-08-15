@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
+.env*
+.env.local
 ivtool/tailwindcss-macos-arm64ivtool/tailwindcss-macos-arm64
 tailwindcss-macos-arm64

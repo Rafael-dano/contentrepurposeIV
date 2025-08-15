@@ -1,17 +1,50 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
+import { supabase } from "../lib/supabaseClient";
 
 export default function SignUp() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Sign Up form submitted (mock)!");
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: { display_name: form.name },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // If email confirmations are ON, user may not be signed in immediately
+    if (!data.session) {
+      alert("Check your email to confirm your account, then log in.");
+      setLoading(false);
+      navigate("/login");
+      return;
+    }
+
+    // If you get a session immediately, upsert profile row
+    await supabase.from("profiles").upsert({
+      id: data.user.id,
+      display_name: form.name,
+    });
+
+    setLoading(false);
+    navigate("/settings");
   };
 
   return (
@@ -42,8 +75,8 @@ export default function SignUp() {
           onChange={handleChange}
           required
         />
-        <button type="submit" className="auth-btn">
-          Sign Up
+        <button type="submit" className="auth-btn" disabled={loading}>
+          {loading ? "Creating..." : "Sign Up"}
         </button>
       </form>
       <p>

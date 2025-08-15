@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { generateContent } from '../api/textGeneration.js';
+import { supabase } from '../api/supabaseClient.js';
 
 export default function RepurposeTool() {
   const [inputText, setInputText] = useState('');
@@ -6,128 +8,78 @@ export default function RepurposeTool() {
   const [loading, setLoading] = useState(false);
   const [format, setFormat] = useState('blog-post');
   const [darkMode, setDarkMode] = useState(true);
-  const outputRef = useRef(null); // ✅ Step 2
-
-  // ⭐ NEW — Store array for carousel mode
   const [isCarousel, setIsCarousel] = useState(false);
+  const outputRef = useRef(null);
 
-  // Formats that can run instantly without input
-  const NO_INPUT_REQUIRED = ['carousel'];    // const NO_INPUT_REQUIRED = ['carousel', 'idea-generator', 'mock-feature-name'];
-  // later i can make it look like the second one ^^^^
+  const NO_INPUT_REQUIRED = ['carousel-generator'];
 
-
-  // Simulate repurpose API (to be replaced later)
   async function handleRepurpose() {
     setLoading(true);
-    setRepurposedText('');
-    setIsCarousel(false); // reset
-
+    setRepurposedText("");
+    setIsCarousel(false);
+  
     try {
-      await new Promise(r => setTimeout(r, 1500));
-
-      // ⭐ NEW — Carousel mock case
+      // Check for required input
+      if (!inputText.trim() && !NO_INPUT_REQUIRED.includes(format)) {
+        setRepurposedText('⚠️ Please enter some content first.');
+        return;
+      }
+  
+      // ✅ Get the logged-in user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setRepurposedText('⚠️ You must be logged in to use this feature.');
+        return;
+      }
+  
+      let prompt = "";
+  
+      // Build prompt based on format
       if (format === 'carousel-generator') {
-        const mockSlides = [
-          { title: "Slide 1", content: "Hook — Capture attention with a bold statement or surprising fact." },
-          { title: "Slide 2", content: "Problem — Clearly define the problem your audience faces." },
-          { title: "Slide 3", content: "Value — Show why solving this matters." },
-          { title: "Slide 4", content: "Solution — Present your solution in a simple, clear way." },
-          { title: "Slide 5", content: "Call to Action — Invite them to engage, comment, or click." },
-        ];
-        setRepurposedText(mockSlides);
+        prompt = `Create a carousel with 5 slides about: ${inputText || 'any engaging topic'}`;
+        const aiResponse = await generateContent(user.id, prompt);
+        const slides = aiResponse.split("\n\n").map((chunk, i) => ({
+          title: `Slide ${i + 1}`,
+          content: chunk.trim()
+        }));
+        setRepurposedText(slides);
         setIsCarousel(true);
-        outputRef.current?.scrollIntoView({ behavior: 'smooth' });
-        setLoading(false);
         return;
       }
-
+  
       if (format === 'blog-to-email') {
-        if (!inputText.trim()) {
-          setRepurposedText('⚠️ Please paste your blog content before generating.');
-          setLoading(false);
-          return;
-        }
-      
-        const mockEmail = {
-          subject: "Your Weekly Update — Fresh from the Blog!",
-          greeting: "Hi there,",
-          intro: "We thought you’d enjoy this week’s highlights from our latest post:",
-          snippet: `${inputText.substring(0, 200)}...`,
-          highlights: [
-            "Key takeaway #1",
-            "Interesting stat or fact #2",
-            "Actionable tip #3"
-          ],
-          closing: "Thanks for reading and see you next week!",
-          signature: "— The RepurposeIV Team"
-        };
-      
-        setRepurposedText(mockEmail);
-        setIsCarousel(false);
-        outputRef.current?.scrollIntoView({ behavior: 'smooth' });
-        setLoading(false);
-        return;
+        prompt = `Repurpose the following text into an email:\n\n${inputText}`;
+      } else if (format === 'pinterest-caption') {
+        prompt = `Repurpose the following text into a Pinterest caption:\n\n${inputText}`;
+      } else {
+        // Default generic transformation
+        prompt = `Repurpose this text into ${format} format:\n\n${inputText}`;
       }
-      
-      if (format === 'pinterest-caption') {
-        const mockPinterestCaption =
-          "✨ 10 Ways to Style Your Workspace ✨\n\n" +
-          "Transform your home office into a productivity haven!\n" +
-          "💡 Tip 1: Add plants for a fresh vibe.\n" +
-          "💡 Tip 2: Choose a comfy chair.\n" +
-          "💡 Tip 3: Organize with stylish storage.\n\n" +
-          "#HomeOffice #WorkspaceGoals #ProductivityHacks";
-      
-        setRepurposedText(mockPinterestCaption);
-        setIsCarousel(false);
-        outputRef.current?.scrollIntoView({ behavior: 'smooth' });
-        setLoading(false);
-        return;
-      }          
-
-      let result = '';
-      switch (format) {
-        case 'youtube-summary':
-          result = `🎥 YouTube Summary:\n${inputText.slice(0, 100)}...`;
-          break;
-        case 'shorts-script':
-          result = `🎬 Shorts Script:\n"Hey everyone! ${inputText.slice(0, 80)}..."`;
-          break;
-        case 'pinterest-caption':
-          result = `📌 Pinterest Caption:\n${inputText.slice(0, 100)} #repurposeIV`;
-          break;
-        case 'blog-tldr':
-          result = `🧠 TL;DR Summary:\n• ${inputText
-            .split('. ')
-            .slice(0, 5)
-            .join('.\n• ')}.`;
-          break;
-        case 'thread-expander':
-          result = `🧵 Expanded Thread:\n\n${inputText
-            .split('.')
-            .map((sentence, i) => `Paragraph ${i + 1}: ${sentence.trim()}`)
-            .join('\n\n')}`;
-          break;
-        default:
-          result = `📄 Repurposed (${format}):\n${inputText.toUpperCase()}`;
-      }
-      setRepurposedText(result);
-      outputRef.current?.scrollIntoView({ behavior: 'smooth' }); // ✅ Step 3
+  
+      // ✅ Call your text generation function
+      const aiResponse = await generateContent(user.id, prompt);
+      setRepurposedText(aiResponse);
+  
     } catch (err) {
-      setRepurposedText('Error repurposing content.');
+      console.error(err);
+      if (err.message.includes("Usage limit reached")) {
+        setRepurposedText("⚠️ You’ve reached your free-tier limit. Please upgrade to continue.");
+      } else {
+        setRepurposedText('❌ Error generating content.');
+      }
     } finally {
       setLoading(false);
+      outputRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  }  
 
-  // Load localStorage on mount
+  // ✅ Load saved state from localStorage
   useEffect(() => {
     setInputText(localStorage.getItem('repurpose-input') || '');
     setRepurposedText(localStorage.getItem('repurpose-output') || '');
     setFormat(localStorage.getItem('repurpose-format') || 'blog-post');
   }, []);
 
-  // Save to localStorage
   useEffect(() => {
     localStorage.setItem('repurpose-input', inputText);
   }, [inputText]);
@@ -140,21 +92,33 @@ export default function RepurposeTool() {
     localStorage.setItem('repurpose-format', format);
   }, [format]);
 
-  // Header component
+  function copyToClipboard() {
+    if (typeof repurposedText === "string") {
+      navigator.clipboard.writeText(repurposedText).then(() => {
+        alert("✅ Copied to clipboard!");
+      });
+    } else {
+      // If carousel mode (array of slides)
+      const textVersion = repurposedText.map(slide => `${slide.title}\n${slide.content}`).join("\n\n");
+      navigator.clipboard.writeText(textVersion).then(() => {
+        alert("✅ Carousel copied to clipboard!");
+      });
+    }
+  }  
+
+  // ✅ Header Component
   const Header = () => (
     <header className="w-full px-6 py-4 flex items-center justify-between bg-gray-800 text-white shadow-md">
       <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
         <span className="text-3xl">♻️</span> IV <span className="text-cyan-400">Content</span>
       </h1>
-      
       <section>
-        <a class="price-box" href="/beta.html" target="_blank">Join Beta Till September 30th</a> 
+        <a href="index-beta.html" className="btn">Join Beta Till September 30th</a>
       </section>
     </header>
   );
-// ^^^^^change the beta link section to the Index.html but change the name so it doesnt get confused with other index.html ^^^^^^
-  
-return (
+
+  return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} font-sans`}>
       <Header />
       <main className="max-w-6xl mx-auto px-4 py-12">
@@ -166,8 +130,9 @@ return (
             Turn your content into summaries, scripts, captions and more — all in one place.
           </p>
         </section>
+
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Input format label */}
+          {/* Format Label */}
           <div className="mb-2 text-sm text-cyan-400 font-semibold">
             {format === 'blog-post' && '📝 Blog Post'}
             {format === 'social-post' && '💬 Social Post'}
@@ -214,21 +179,21 @@ return (
               <option value="pinterest-caption">Pinterest Caption</option>
               <option value="blog-tldr">Blog → TL;DR</option>
               <option value="thread-expander">Tweet → Blog Style Expansion</option>
-              <option value="carousel-generator">Carousel Generator</option>
               <option value="blog-to-email">Blog → Email Expander</option>
-              <option value="idea-generator">Idea Generator</option>
-              <option value="calendar-generator">Content Calendar</option>
-              <option value="script-to-vocal">AI Vocals</option>
+              <option value="carousel-generator">Carousel Generator "Coming Soon"</option>
+              <option value="idea-generator">Idea Generator "Coming Soon" </option>
+              <option value="calendar-generator">Content Calendar "Coming Soon"</option>
+              <option value="script-to-vocal">AI Vocals "Coming Soon"</option>
             </select>
             <button
-              className="w-full sm:w-1/2 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold px-5 py-3 rounded-md transition-all duration-200"
+              className="w-full sm:w-1/2 bg-cyan-500 hover:bg-cyan-600 text-black font-semibold px-5 py-3 rounded-md transition-all duration-200 mt-4"
               onClick={handleRepurpose}
-              disabled={loading || (!inputText.trim() && format !== 'carousel')}
+              disabled={loading || (!inputText.trim() && !NO_INPUT_REQUIRED.includes(format))}
             >
               Repurpose Content
             </button>
             <button
-              className="w-full sm:w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-semibold px-5 py-3 rounded-md transition-all duration-200"
+              className="w-full sm:w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-semibold px-5 py-3 rounded-md transition-all duration-200 mt-2"
               onClick={() => {
                 setInputText('');
                 setRepurposedText('');
@@ -246,12 +211,12 @@ return (
                 Repurposing your content...
               </p>
             )}
-        
+
             {!loading && repurposedText && (
               <>
                 {isCarousel ? (
                   <>
-                    {/* ⭐ Carousel Card Layout */}
+                    {/* Carousel Layout */}
                     <div className="flex overflow-x-auto gap-4 pb-4">
                       {repurposedText.map((slide, index) => (
                         <div
@@ -263,8 +228,6 @@ return (
                         </div>
                       ))}
                     </div>
-
-                    {/* ⭐ Mock download button */}
                     <div className="mt-4 flex gap-4 justify-end">
                       <button
                         className="bg-green-500 hover:bg-green-600 text-black font-semibold px-5 py-3 rounded-md transition-all duration-200"
@@ -272,25 +235,6 @@ return (
                       >
                         📥 Download Carousel as Images
                       </button>
-                    </div>
-                  </>
-                ) : format === 'blog-to-email' && typeof repurposedText === 'object' ? (
-                  <>
-                    {/* ⭐ Fancy Email Preview */}
-                    <div className={`p-6 rounded-lg shadow-lg border ${darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}>
-                      <h3 className="text-xl font-bold mb-4">📧 {repurposedText.subject}</h3>
-                      <p className="mb-4">{repurposedText.greeting}</p>
-                      <p className="mb-4">{repurposedText.intro}</p>
-                      <blockquote className="italic border-l-4 pl-4 mb-4">
-                        {repurposedText.snippet}
-                      </blockquote>
-                      <ul className="list-disc list-inside mb-4">
-                        {repurposedText.highlights.map((point, idx) => (
-                          <li key={idx}>{point}</li>
-                        ))}
-                      </ul>
-                      <p className="mb-2">{repurposedText.closing}</p>
-                      <p className="font-semibold">{repurposedText.signature}</p>
                     </div>
                   </>
                 ) : (
@@ -319,6 +263,12 @@ return (
                       >
                         Download .txt
                       </button>
+                      <button
+                        onClick={copyToClipboard}
+                        className="mt-3 px-4 py-2 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition"
+                      >
+                        📋 Copy to Clipboard
+                      </button>
                     </div>
                   </>
                 )}
@@ -331,4 +281,5 @@ return (
     </div>
   );
 }
+
 

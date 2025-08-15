@@ -1,22 +1,39 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Auth.css";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Login form submitted (mock)!");
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+
+    if (error) {
+      alert(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+    navigate(from);
   };
 
   return (
     <div className="auth-container">
-      <h1>Welcome Back to IV Content</h1>
+      <h1>Welcome Back to IVContent</h1>
       <form onSubmit={handleSubmit} className="auth-form">
         <input
           type="email"
@@ -34,8 +51,8 @@ export default function Login() {
           onChange={handleChange}
           required
         />
-        <button type="submit" className="auth-btn">
-          Log In
+        <button type="submit" className="auth-btn" disabled={loading}>
+          {loading ? "Logging in..." : "Log In"}
         </button>
       </form>
       <p>
