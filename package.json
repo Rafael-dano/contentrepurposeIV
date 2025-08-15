@@ -1,0 +1,12 @@
+{
+"scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+},
+
+"devDependencies": {
+    "tailwindcss": "^4.1.11"
+  }
+}
