@@ -1,4 +1,6 @@
+# ------------------------
 # Logs
+# ------------------------
 logs
 *.log
 npm-debug.log*
@@ -7,15 +9,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# ------------------------
+# Dependencies
+# ------------------------
+node_modules/
+
+# ------------------------
+# Build output
+# ------------------------
+dist/
+dist-ssr/
 *.local
 
-# Editor directories and files
+# ------------------------
+# Environment files (DO NOT COMMIT SECRETS)
+# ------------------------
+.env
+.env.*    # catches .env.local, .env.development, etc.
+
+# ------------------------
+# Editor & OS cruft
+# ------------------------
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
@@ -23,10 +40,11 @@ dist-ssr
 *.sln
 *.sw?
 
-.env*
-.env.local
-ivtool/tailwindcss-macos-arm64ivtool/tailwindcss-macos-arm64
+# ------------------------
+# Platform-specific binaries (remove if not relevant anymore)
+# ------------------------
 tailwindcss-macos-arm64
+
 
 # Local Netlify folder
 .netlify
